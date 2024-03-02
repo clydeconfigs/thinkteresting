@@ -1,0 +1,22 @@
+#!/bin/fish
+
+set d (ls | grep -P "\d.md" | sort -r | head -c 1)
+
+# compile all md to -> html
+for i in (seq $d -1 1)
+    pandoc -s $i.md > $i.html
+end
+
+# delete everything after "table of contents", to clean the old one
+sed -i '/table of contents: /,$d' ../index.md
+
+# insert the new table of contents (and two spaces)
+echo 'table of contents: ' | sed 's/$/\n  /' >> ../index.md
+
+# insert the table of contents
+for i in (seq $d -1 1)
+    echo [(grep -Pz "\-\-\-\ntitle:" $i.md | head -n 2 | tail -n 1)]\(entries/$i.html\) | sed "s/title: /$i\. /g" | sed 's/$/  /' >> ../index.md
+end
+
+# compile the index md to -> html
+pandoc -s ../index.md > ../index.html
